@@ -134,3 +134,14 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Separate assignment submission workspace
+/제출용/
+
+# Private runtime configuration and credentials (examples stay trackable)
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.pfx
+*.p12
