@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "builds": [
+    {
+      "src": "api/index.mjs",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["public/**", "student/extension.mjs"]
+      }
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/api/index.mjs" }
+  ]
+}
