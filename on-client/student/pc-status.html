@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>크립테아 · 내 PC 상태</title>
+  <style>
+    :root{color-scheme:light;font:16px/1.6 system-ui,sans-serif;color:#182235;background:#f3f6fa}
+    body{max-width:1200px;margin:auto;padding:28px}h1{margin-bottom:8px;letter-spacing:-.04em}h2{font-size:1.2rem}
+    section{background:white;border:1px solid #d8e0ea;border-radius:12px;padding:20px;margin:20px 0}
+    button{font:inherit;padding:10px 16px;background:#fff;border:1px solid #66758b;border-radius:6px;margin:0 8px 8px 0;cursor:pointer}
+    button:focus-visible{outline:3px solid #2255bb;outline-offset:3px}button:disabled{opacity:.55;cursor:default}
+    table{border-collapse:collapse;width:100%}th,td{text-align:left;vertical-align:top;padding:12px;border-bottom:1px solid #d8e0ea}
+    .scroll{overflow-x:auto}.badge{display:inline-block;color:#174c36;background:#e3f4eb;padding:3px 12px;border-radius:20px}.muted{color:#526174}
+    .unknown{color:#8d301b;font-weight:600}caption{text-align:left;font-weight:600;padding:8px 0}
+    header{padding:22px 4px 8px}a{color:#224da0}a:focus-visible,summary:focus-visible{outline:3px solid #2255bb;outline-offset:4px}
+    .skip{position:absolute;left:12px;top:-80px;background:#fff;padding:12px;z-index:2}.skip:focus{top:8px}
+    .overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+    .overview section{margin:0;border-top:4px solid #315cb6;box-shadow:0 6px 22px #18223508}
+    .overview h2{margin-top:0}.overview p{overflow-wrap:anywhere}.overview .order{font-size:.85rem;font-weight:700;color:#526174}
+    .overview button{width:100%;margin-top:10px}.context{border-left:4px solid #6b7280;background:#eef2f7;padding:14px 18px;margin:18px 0}
+    .resource-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.resource-grid section{margin:0}.resource-grid section:last-child{grid-column:1/-1}
+    details{border-top:1px solid #d8e0ea;padding:14px 0}summary{cursor:pointer;font-weight:700;padding:6px 0}
+    [aria-busy="true"]{border-color:#315cb6}button:disabled{opacity:.75;background:#edf1f8;color:#3d4d67}
+    @media(max-width:820px){body{padding:16px}.overview,.resource-grid{grid-template-columns:1fr}.resource-grid section:last-child{grid-column:auto}th,td{padding:8px}}
+  </style>
+</head>
+<body>
+  <a class="skip" href="#overview">핵심 기능으로 건너뛰기</a>
+  <header><span class="badge">학생 작성 · 실제 측정</span><h1>크립테아 · 내 PC 상태</h1>
+    <p>이 로컬 서버를 실행한 PC의 OS 값을 일반 권한으로 읽습니다. 예시 값은 사용하지 않습니다.</p>
+    <p class="muted">기존 보안 앱의 기기 상태와 별도 기능입니다. CPU·메모리 사용량만으로 보안 이상을 판단하지 않습니다.</p>
+  </header>
+  <main>
+  <nav id="overview" class="overview" aria-label="핵심 기능 3가지" tabindex="-1">
+    <section aria-labelledby="overview-resource-title"><p class="order">01 · 자원</p><h2 id="overview-resource-title"><a href="#resource-panel">PC 자원과 두 시점 비교</a></h2>
+      <div id="summary-resource"><p>조회 전 · 표시할 실제 값 없음</p></div><button id="resource-reload" type="button">PC 자원 다시 조회</button>
+    </section>
+    <section aria-labelledby="overview-network-title"><p class="order">02 · 구성</p><h2 id="overview-network-title"><a href="#windows-panel">네트워크·방화벽</a></h2>
+      <div id="summary-network"><p>조회 전 · 상태 미확인</p></div><button id="network-reload" type="button">네트워크·방화벽 다시 조회</button>
+      <p class="muted">Windows 기록도 함께 갱신합니다.</p>
+    </section>
+    <section aria-labelledby="overview-events-title"><p class="order">03 · 기록</p><h2 id="overview-events-title"><a href="#events-panel">최근 Windows 경고·오류</a></h2>
+      <div id="summary-events"><p>조회 전 · 0건으로 판단하지 않음</p></div><button id="events-reload" type="button">최근 기록 다시 조회</button>
+      <p class="muted">네트워크·방화벽도 함께 갱신합니다. 건수는 공격 탐지가 아닙니다.</p>
+    </section>
+  </nav>
+  <aside class="context" aria-label="SDP 상태 별도 요약"><div id="summary-sdp">SDP 조회 전 · PC 조회 성공과 별개</div></aside>
+  <section id="resource-panel" tabindex="-1" aria-labelledby="controls-title"><h2 id="controls-title">자원 상세 · 수동 두 측정값 비교</h2>
+    <p>처음 측정값을 기준으로 보관하고, 다시 누른 시점의 값과 비교합니다. 자동 수집·외부 전송·파일 저장은 하지 않습니다. 새로고침하면 기록이 지워집니다.</p>
+    <button id="first" type="button">처음 측정</button><button id="again" type="button" disabled>다시 측정하여 비교</button>
+    <p id="notice" role="status" aria-live="polite">측정 전입니다. 표시할 실제 값이 없습니다.</p>
+  </section>
+  <div class="resource-grid">
+  <section aria-labelledby="baseline-title"><h2 id="baseline-title">처음 측정 · 기준값</h2><div id="baseline"><p>측정 전</p></div></section>
+  <section aria-labelledby="current-title"><h2 id="current-title">이번 측정</h2><div id="current"><p>측정 전</p></div></section>
+  <section aria-labelledby="compare-title"><h2 id="compare-title">기준값과 비교</h2><div id="comparison"><p>두 번 측정한 뒤 비교할 수 있습니다.</p></div></section>
+  </div>
+  <section><h2>값의 의미와 제공 범위</h2>
+    <p>CPU: 약 1초 동안 전체 논리 CPU의 평균 사용률(%). 서로 다른 순간의 값이며 순간 최대값이 아닙니다.</p>
+    <p>메모리: OS가 보고한 전체 물리 메모리 − 남은 물리 메모리(GiB). 작업 관리자의 분류와 계산 기준이 다를 수 있습니다.</p>
+    <p>디스크: 이 프로젝트가 저장된 볼륨에서 사용 가능한 공간(GiB). 모든 드라이브의 합계가 아닙니다. 1 GiB = 1,073,741,824바이트.</p>
+    <p>시각은 한국 표준시(KST)와 UTC 원문을 함께 표시합니다. 읽지 못한 값은 확인 불가와 이유·조회 시도 시각을 표시하며 0이나 예시로 채우지 않습니다.</p>
+    <p>제공 시작 틀: 보안 기준에 따른 기기 상태·앱 접근·기록 화면. 학생 추가: 이 별도 화면·OS 읽기·두 시점 비교. 예시 자료 화면은 만들지 않았습니다.</p>
+  </section>
+  <section id="windows-panel" tabindex="-1" aria-labelledby="windows-title">
+    <h2 id="windows-title">이 PC의 네트워크·방화벽·Windows 기록</h2>
+    <p class="badge">학생 추가 · 실제 조회만 · 설정 변경 없음</p>
+    <p>사용자가 누를 때만 일반 권한으로 읽습니다. 네트워크 주소는 이 로컬 화면에만 표시하며 외부로 전송하거나 저장하지 않습니다.</p>
+    <p><strong>Windows 경고·오류 건수는 침해나 공격 탐지 결과가 아닙니다.</strong> 최근 24시간의 System·Application에서 Warning(3)·Error(2)만 셉니다. Critical·Security 기록은 포함하지 않습니다.</p>
+    <button id="windows-load" type="button">PC 구성·최근 기록 다시 조회</button>
+    <p id="windows-notice" role="status" aria-live="polite">조회 전입니다. PC 조회 성공은 SDP 연결 성공이 아닙니다.</p>
+    <details><summary>네트워크 주소 상세 보기</summary><div id="network-result"><p>조회 전</p></div></details>
+    <details><summary>적용 중 방화벽 프로필의 기본 설정 보기</summary><div id="firewall-result"><p>조회 전</p></div></details>
+    <p class="muted">프로필의 기본 정책만 읽습니다. 모든 개별 규칙이나 실제 통신 차단 효과를 검사하지 않으며, 활성화 값만으로 PC가 안전하다고 판단하지 않습니다.</p>
+    <div id="events-panel" tabindex="-1"><h3>최근 24시간 경고·오류 건수</h3><div id="events-result"><p>조회 전</p></div></div>
+  </section>
+  <section aria-labelledby="sdp-title"><h2 id="sdp-title">SDP 연결 상태 · PC 조회와 별개</h2>
+    <div id="sdp-result"><p>조회 전 · 이 PC를 읽을 수 있어도 SDP 서버 연결을 의미하지 않습니다.</p></div>
+  </section>
+  </main>
+  <script type="module">
+    const first = document.getElementById('first'), again = document.getElementById('again');
+    const notice = document.getElementById('notice');
+    const resourceReload=document.getElementById('resource-reload');
+    const summaryResource=document.getElementById('summary-resource');
+    let baseline = null;
+    const labels = {cpu:'CPU 사용률',memory:'메모리 사용량',disk:'디스크 남은 공간'};
+    const text = (tag, value) => { const node=document.createElement(tag); node.textContent=value; return node; };
+    const formatTime = value => `${new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium',timeStyle:'medium',hour12:false}).format(new Date(value))} KST · ${value}`;
+    const num = value => value.toFixed(2);
+    const shortTime=value=>`${new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(value))} KST`;
+    function busy(id,value){document.getElementById(id).setAttribute('aria-busy',String(value));}
+    function restoreFocus(button){if(document.activeElement===document.body&&typeof button?.focus==='function')button.focus({preventScroll:true});}
+    function resourceSummary(sample){
+      summaryResource.replaceChildren(text('p','실제 측정 · 이번 결과'));
+      for(const key of Object.keys(labels)){
+        const m=sample[key];
+        summaryResource.append(text('p',m.status==='ok'?`${labels[key]} ${num(m.value)} ${m.unit} · ${shortTime(m.measuredAt)}`:`${labels[key]} 확인 불가: ${m.reason} · ${shortTime(m.attemptedAt)}`));
+      }
+      if(Object.keys(labels).some(key=>sample[key].status!=='ok'))summaryResource.append(text('p','다음: 일반 권한·OS 지원 여부를 확인하고 직접 다시 조회하세요. 권한을 올리지 않습니다.'));
+    }
+    function drawSample(id, sample) {
+      const wrap=document.getElementById(id); wrap.replaceChildren();
+      const table=document.createElement('table');table.append(text('caption','실제 OS 측정값 · 예시 아님'));
+      const head=document.createElement('tr');for(const title of ['항목','값·단위','잰 시각 / 조회 시도 시각']){const th=text('th',title);th.scope='col';head.append(th);}table.append(head);
+      for(const key of Object.keys(labels)){
+        const m=sample[key],row=document.createElement('tr');row.append(text('th',labels[key]));
+        const cell=document.createElement('td');
+        if(m.status==='ok'){
+          cell.append(text('p',`${num(m.value)} ${m.unit}`));
+          if(key==='cpu')cell.append(text('p',`측정 구간: ${m.windowMs} ms`));
+          if(key==='memory')cell.append(text('p',`전체 ${num(m.totalGiB)} GiB 중 ${num(m.percent)}%`));
+        }else{cell.append(text('p',`확인 불가 · 단위: ${m.unit}`),text('p',m.reason));cell.className='unknown';}
+        row.append(cell,text('td',formatTime(m.measuredAt??m.attemptedAt)));table.append(row);
+      }
+      const scroll=document.createElement('div');scroll.className='scroll';scroll.append(table);wrap.append(scroll);
+    }
+    function drawComparison(current){
+      const wrap=document.getElementById('comparison');wrap.replaceChildren();
+      for(const key of Object.keys(labels)){
+        const before=baseline[key],after=current[key];
+        if(before.status!=='ok'||after.status!=='ok'){
+          wrap.append(text('p',`${labels[key]}: 비교 확인 불가. ${before.status!=='ok'?'기준값: '+before.reason+' / ':''}${after.status!=='ok'?'이번 값: '+after.reason:''}`));continue;
+        }
+        const delta=after.value-before.value,unit=key==='cpu'?'%p':'GiB';
+        const seconds=(Date.parse(after.measuredAt)-Date.parse(before.measuredAt))/1000;
+        wrap.append(text('p',`${labels[key]}: ${delta>=0?'+':''}${num(delta)} ${unit} · 간격 ${seconds.toFixed(1)}초`));
+        wrap.append(text('p',`기준 ${formatTime(before.measuredAt)} → 이번 ${formatTime(after.measuredAt)}`));
+      }
+      wrap.append(text('p','변화량은 두 측정값의 차이입니다. 지속적인 추이나 이상 징후를 입증하지 않습니다.'));
+    }
+    async function measure(reset,originButton=first){
+      first.disabled=true;again.disabled=true;resourceReload.disabled=true;
+      resourceReload.textContent='자원 조회 중…';busy('resource-panel',true);busy('summary-resource',true);
+      summaryResource.replaceChildren(text('p','조회 중 · 현재 값 미확인'));
+      document.getElementById('current').replaceChildren(text('p','측정 중입니다. 이전 값을 현재 결과로 표시하지 않습니다.'));
+      document.getElementById('comparison').replaceChildren(text('p','비교 대기 중'));
+      if(reset){baseline=null;document.getElementById('baseline').replaceChildren(text('p','새 기준 측정 중'));}
+      notice.textContent='실제 OS 값 측정 중 · CPU 측정에 약 1초가 걸립니다.';
+      try{
+        const response=await fetch('/api/measure',{cache:'no-store',signal:AbortSignal.timeout(10000)});
+        if(!response.ok)throw Error('REQUEST_FAILED');
+        const sample=await response.json();
+        if(sample.source!=='actual'||Object.keys(labels).some(k=>!['ok','unknown'].includes(sample[k]?.status)))throw Error('INVALID_RESPONSE');
+        if(reset){baseline=sample;drawSample('baseline',sample);}
+        drawSample('current',sample);
+        resourceSummary(sample);
+        if(!reset)drawComparison(sample);
+        else document.getElementById('comparison').replaceChildren(text('p','기준값이 준비됐습니다. 다시 측정하여 비교를 누르세요.'));
+        notice.textContent=Object.keys(labels).some(k=>sample[k].status!=='ok')?'측정 응답을 받았습니다. 확인 불가 항목은 이유를 확인하세요.':'실제 측정값을 받았습니다. 시각·단위·측정 범위를 함께 확인하세요.';
+      }catch{
+        const attemptedAt=new Date().toISOString();
+        const reason='로컬 측정 서버의 응답을 읽지 못했습니다. 서버 실행과 주소를 확인한 뒤 직접 다시 누르세요.';
+        document.getElementById('current').replaceChildren(text('p',`확인 불가: ${reason}`),text('p',`조회 시도 시각: ${formatTime(attemptedAt)}`));
+        document.getElementById('comparison').replaceChildren(text('p','비교 확인 불가. 이번 측정값이 없습니다.'));
+        if(reset)document.getElementById('baseline').replaceChildren(text('p','확인 불가. 기준 측정값을 받지 못했습니다.'));
+        notice.textContent='조회 실패 · 예시 값이나 이전 값을 현재 결과로 사용하지 않았습니다.';
+        summaryResource.replaceChildren(text('p','PC 자원 조회 실패 · 확인 불가'),text('p',reason),text('p',`시도 ${shortTime(attemptedAt)}`));
+      }finally{first.disabled=false;again.disabled=baseline===null;resourceReload.disabled=false;resourceReload.textContent='PC 자원 다시 조회';busy('resource-panel',false);busy('summary-resource',false);restoreFocus(originButton);}
+    }
+    first.addEventListener('click',()=>measure(true,first));again.addEventListener('click',()=>measure(false,again));
+    resourceReload.addEventListener('click',()=>measure(baseline===null,resourceReload));
+
+    const windowsButton=document.getElementById('windows-load');
+    const windowsNotice=document.getElementById('windows-notice');
+    const networkReload=document.getElementById('network-reload'),eventsReload=document.getElementById('events-reload');
+    const summaryNetwork=document.getElementById('summary-network'),summaryEvents=document.getElementById('summary-events'),summarySdp=document.getElementById('summary-sdp');
+    const sections=['network-result','firewall-result','events-result','sdp-result'];
+    function paragraph(parent,value){parent.append(text('p',value));}
+    function unknown(parent,item){
+      paragraph(parent,`확인 불가: ${item.reason??'읽은 결과를 확인할 수 없습니다.'}`);
+      paragraph(parent,`조회 시도 시각: ${formatTime(item.attemptedAt??item.checkedAt??new Date().toISOString())}`);
+      paragraph(parent,'다음: 일반 PowerShell에서 서버 실행·명령 지원 여부를 확인하고 다시 조회하세요. 권한 부족이면 변경하지 말고 담당자에게 확인하세요.');
+    }
+    function windowsSummary(data){
+      summaryNetwork.replaceChildren(text('p','실제 조회 · 구성 요약'));summaryEvents.replaceChildren(text('p','실제 조회 · 최근 24시간'));
+      for(const [key,label]of [['network','네트워크'],['firewall','방화벽']]){
+        const item=data[key];
+        paragraph(summaryNetwork,item.status==='ok'?`${label}: ${key==='network'?item.interfaces.length+'개 인터페이스':item.profiles.length+'개 프로필 · 활성 '+item.profiles.filter(p=>p.enabled==='True').length+'개 · 비활성 '+item.profiles.filter(p=>p.enabled==='False').length+'개 · 확인 불가 '+item.profiles.filter(p=>!['True','False'].includes(p.enabled)).length+'개'} · ${shortTime(item.checkedAt)}`:`${label}: 확인 불가 · ${item.reason} · ${shortTime(item.attemptedAt)}`);
+      }
+      if(data.network.status!=='ok'||data.firewall.status!=='ok')paragraph(summaryNetwork,'다음: 일반 권한과 조회 명령 지원 여부를 확인하세요. 보안 설정은 변경하지 않습니다.');
+      if(data.events.status==='ok'){
+        paragraph(summaryEvents,`${shortTime(data.events.startAt)} ~ ${shortTime(data.events.endAt)}`);
+        for(const log of data.events.logs)paragraph(summaryEvents,log.status==='ok'?`${log.name}: 경고 ${log.warnings}건 · 오류 ${log.errors}건 · ${shortTime(log.checkedAt)}`:`${log.name}: 확인 불가 · ${log.reason} · ${shortTime(log.attemptedAt)}`);
+        if(data.events.logs.some(log=>log.status!=='ok'))paragraph(summaryEvents,'다음: 실패한 로그의 읽기 권한을 담당자에게 확인하세요. 0건으로 판단하지 않습니다.');
+      }else{paragraph(summaryEvents,`기록 조회 확인 불가: ${data.events.reason} · ${shortTime(data.events.attemptedAt)}`);paragraph(summaryEvents,'다음: Windows 기록 읽기를 지원하는 일반 환경에서 직접 다시 조회하세요.');}
+      summarySdp.replaceChildren(text('p',`${data.sdp.message??'SDP 연결 확인 불가'} · ${shortTime(data.sdp.checkedAt??data.sdp.attemptedAt)}`),text('p','PC 조회 성공과 별개 · 연결의 자세한 근거는 아래 SDP 영역을 확인하세요.'));
+    }
+    function drawWindows(data){
+      for(const id of sections)document.getElementById(id).replaceChildren();
+      const network=document.getElementById('network-result'),firewall=document.getElementById('firewall-result');
+      const events=document.getElementById('events-result'),sdp=document.getElementById('sdp-result');
+      if(data.network.status!=='ok')unknown(network,data.network);
+      else{
+        paragraph(network,`실제 조회 · 인터페이스 ${data.network.interfaces.length}개 · ${formatTime(data.network.checkedAt)}`);
+        for(const item of data.network.interfaces){
+          paragraph(network,`인터페이스: ${item.name}`);
+          for(const [key,label]of [['ipv4','IPv4 주소'],['ipv6','IPv6 주소'],['gateways','기본 게이트웨이'],['dns','DNS 서버 주소']]){
+            paragraph(network,`${label}: ${item[key]?.length?item[key].join(', '):'조회된 구성값 없음'} · ${formatTime(data.network.checkedAt)}`);
+          }
+        }
+        paragraph(network,'구성이 조회됐다는 사실은 인터넷 접속·SDP 연결·보안 상태가 정상이라는 뜻이 아닙니다.');
+      }
+      if(data.firewall.status!=='ok')unknown(firewall,data.firewall);
+      else{
+        paragraph(firewall,`실제 조회 · ActiveStore · ${formatTime(data.firewall.checkedAt)}`);
+        for(const profile of data.firewall.profiles){
+          const enabled=profile.enabled==='True'?'활성화(True)':profile.enabled==='False'?'비활성화(False)':`확인 불가(${profile.enabled})`;
+          const policy=value=>value==='Block'?'차단(Block)':value==='Allow'?'허용(Allow)':`기본 동작 확인 불가(${value})`;
+          paragraph(firewall,`${profile.name}: ${enabled} · 기본 인바운드 ${policy(profile.inbound)} · 기본 아웃바운드 ${policy(profile.outbound)} · ${formatTime(data.firewall.checkedAt)}`);
+        }
+        if(!data.firewall.profiles.length)paragraph(firewall,'조회된 프로필이 없습니다. 설정을 확인할 수 없습니다.');
+      }
+      if(data.events.status!=='ok')unknown(events,data.events);
+      else{
+        paragraph(events,`실제 조회 범위: ${formatTime(data.events.startAt)} ~ ${formatTime(data.events.endAt)}`);
+        for(const log of data.events.logs){
+          if(log.status==='ok')paragraph(events,`${log.name}: 경고 ${log.warnings}건 · 오류 ${log.errors}건 · 조회 시각 ${formatTime(log.checkedAt)}`);
+          else{paragraph(events,`${log.name}: 건수 확인 불가`);unknown(events,log);}
+        }
+      }
+      paragraph(events,'이 건수는 침해나 공격 탐지 결과가 아닙니다. 읽기 실패를 0건이나 정상으로 표시하지 않습니다.');
+      paragraph(sdp,data.sdp.message??'SDP 연결 확인 불가');
+      paragraph(sdp,data.sdp.reason);
+      paragraph(sdp,`확인 시각: ${formatTime(data.sdp.checkedAt??data.sdp.attemptedAt)}`);
+      paragraph(sdp,'SDP 상태의 근거는 기존 보안 앱(127.0.0.1:5189)의 연결 진단입니다. PC 구성 조회 성공 여부와 분리합니다.');
+      windowsSummary(data);
+    }
+    async function loadWindows(originButton=windowsButton){
+      for(const button of [windowsButton,networkReload,eventsReload])button.disabled=true;
+      windowsButton.textContent='PC 구성·기록 조회 중…';networkReload.textContent='구성 조회 중…';eventsReload.textContent='기록 조회 중…';
+      busy('windows-panel',true);
+      for(const id of ['summary-network','summary-events','summary-sdp']){busy(id,true);document.getElementById(id).replaceChildren(text('p','조회 중 · 현재 결과 미확인'));}
+      windowsNotice.textContent='읽기 전용 조회 중입니다. 최대 약 40초가 걸릴 수 있습니다. 이전 결과는 지웠습니다.';
+      for(const id of sections)document.getElementById(id).replaceChildren(text('p','조회 중 · 현재 결과 미확인'));
+      try{
+        const response=await fetch('/api/windows-status',{cache:'no-store',signal:AbortSignal.timeout(45000)});
+        if(!response.ok)throw Error('WINDOWS_REQUEST_FAILED');
+        const data=await response.json();
+        if(data.source!=='actual'||!data.network||!data.firewall||!data.events||!data.sdp)throw Error('INVALID_RESULT');
+        drawWindows(data);
+        const partial=[data.network,data.firewall,data.events].some(v=>v.status!=='ok')||data.events.logs?.some(v=>v.status!=='ok');
+        windowsNotice.textContent=partial?'PC 조회 응답을 받았습니다. 확인 불가 항목의 이유를 확인하세요. SDP는 별도 상태입니다.':'PC 조회 응답을 받았습니다. 설정은 변경하지 않았습니다. SDP 연결 성공이나 공격 탐지 결과를 뜻하지 않습니다.';
+      }catch{
+        const attemptedAt=new Date().toISOString();
+        for(const id of sections){const parent=document.getElementById(id);parent.replaceChildren();unknown(parent,{reason:'로컬 조회 응답을 읽지 못했습니다. 서버 실행·조회 시간을 확인한 뒤 직접 다시 누르세요.',attemptedAt});}
+        paragraph(document.getElementById('sdp-result'),'SDP 연결 확인 불가 · PC 응답 실패만으로 연결 여부를 판단할 수 없습니다.');
+        windowsNotice.textContent='조회 실패 · 예시 값·이전 결과·0건으로 대체하지 않았습니다.';
+        for(const target of [summaryNetwork,summaryEvents,summarySdp])target.replaceChildren(text('p','조회 실패 · 확인 불가'),text('p',`시도 ${shortTime(attemptedAt)}`),text('p','다음: 로컬 서버 실행 상태를 확인한 뒤 다시 조회하세요.'));
+        paragraph(summarySdp,'SDP 연결 확인 불가 · PC 조회 실패만으로 SDP 연결 여부를 판단하지 않습니다.');
+      }finally{
+        for(const button of [windowsButton,networkReload,eventsReload])button.disabled=false;
+        windowsButton.textContent='PC 구성·최근 기록 다시 조회';networkReload.textContent='네트워크·방화벽 다시 조회';eventsReload.textContent='최근 기록 다시 조회';
+        busy('windows-panel',false);for(const id of ['summary-network','summary-events','summary-sdp'])busy(id,false);restoreFocus(originButton);
+      }
+    }
+    windowsButton.addEventListener('click',()=>loadWindows(windowsButton));networkReload.addEventListener('click',()=>loadWindows(networkReload));eventsReload.addEventListener('click',()=>loadWindows(eventsReload));
+  </script>
+</body>
+</html>

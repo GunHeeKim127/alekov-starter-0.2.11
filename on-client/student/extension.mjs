@@ -1,9 +1,24 @@
 // 이 파일은 학생이 같은 프로젝트에서 이어서 구현합니다.
 // 제공 UI를 받은 것만으로 단계 완료를 인정하지 않습니다.
+// Styles stay inside returned student DOM; no provided page or global stylesheet changes.
+function createStudentPanel(label, busy = false, intro = '') {
+  const root = document.createElement('div');
+  root.setAttribute('role', 'group');
+  root.setAttribute('aria-label', label);
+  root.setAttribute('aria-busy', String(busy));
+  root.setAttribute('style', 'padding:16px;border:1px solid #d5ddea;border-left:4px solid #5a43b5;border-radius:10px;background:#fff;color:#182235;line-height:1.7;overflow-wrap:anywhere;');
+  if (intro) {
+    const heading = document.createElement('p');
+    heading.textContent = intro;
+    heading.setAttribute('style', 'font-weight:700;margin:0 0 12px;');
+    root.append(heading);
+  }
+  return root;
+}
 export function createStudentView() {
   return {
     renderIdentity({ me, devices, sessions }) {
-      const root = document.createElement('div');
+      const root = createStudentPanel('현재 계정·기기·세션', [me, devices, sessions].some(item => item?.status === 'loading'), '핵심 1 · 내 계정과 기기의 현재 상태');
       const deviceLabels = {
         compliant: '보안 기준 충족',
         noncompliant: '보안 기준 미충족',
@@ -45,6 +60,7 @@ export function createStudentView() {
           line(section, '불러오는 중');
         } else if (resource?.status === 'error') {
           line(section, `연결 실패: ${value(resource.error?.message)}`);
+          line(section, '다음: 제공 화면 위쪽의 다시 불러오기를 직접 누르세요. 미연결이 계속되면 담당자에게 연결 설정을 확인하세요.');
         } else if (resource?.status === 'ok') {
           showData(section, resource.data);
         } else {
@@ -70,7 +86,7 @@ export function createStudentView() {
       return root;
     },
     renderDecision({ status, mode, data, error, appId }) {
-      const root = document.createElement('div');
+      const root = createStudentPanel('업무 앱 접근 판정', status === 'loading', '핵심 2 · 선택한 업무 앱의 판정과 이유');
       const line = (text) => {
         const paragraph = document.createElement('p');
         paragraph.textContent = text;
@@ -114,7 +130,7 @@ export function createStudentView() {
       return root;
     },
     renderEvents({ status, mode, data, error }) {
-      const root = document.createElement('div');
+      const root = createStudentPanel('내 보안 기록과 근거', status === 'loading', '핵심 3 · 내 기록의 근거와 현재 상태');
       const value = (text) => text == null || text === '' ? '확인 불가' : String(text);
       const line = (parent, text) => {
         const paragraph = document.createElement('p');
@@ -129,6 +145,7 @@ export function createStudentView() {
       }
       if (status === 'error') {
         line(root, `기록을 불러오지 못했습니다: ${value(error?.message)}`);
+        line(root, '다음: 제공 화면 위쪽의 다시 불러오기를 직접 누르세요. 이전 기록을 현재 결과로 표시하지 않습니다.');
         if (error?.code === 'CONTRACT_MISMATCH') line(root, '확인 불가 (CONTRACT_MISMATCH)');
         return root;
       }
@@ -242,7 +259,7 @@ export function createStudentView() {
       return root;
     },
     renderStatus({ devices, sessions, notifications, diagnostics, mode }) {
-      const root = document.createElement('div');
+      const root = createStudentPanel('상태·알림·진단', [devices, sessions, diagnostics].some(item => item?.status === 'loading'));
       const value = (text) => ['string', 'number', 'boolean'].includes(typeof text) && text !== '' ? String(text) : '확인 불가';
       const line = (parent, text) => {
         const paragraph = document.createElement('p');
@@ -350,7 +367,7 @@ export function createStudentView() {
       return root;
     },
     renderVulnerabilities({ status, mode, data, error }) {
-      const root = document.createElement('div');
+      const root = createStudentPanel('패키지 조회 결과', status === 'loading');
       const line = (parent, text) => {
         const paragraph = document.createElement('p');
         paragraph.textContent = text;
@@ -410,7 +427,7 @@ export function createStudentView() {
       return root;
     },
     renderAiConnection({ status, mode, data, error, checkedAt, explanationAccepted }) {
-      const root = document.createElement('div');
+      const root = createStudentPanel('AI 연결 점검 결과', status === 'loading');
       const line = text => {
         const paragraph = document.createElement('p');
         paragraph.textContent = text;
@@ -488,7 +505,7 @@ export function createStudentView() {
       return root;
     },
     renderExplanation({ event, explanation, checkedAt }) {
-      const root = document.createElement('div');
+      const root = createStudentPanel('참고용 AI 설명', explanation?.status === 'loading');
       const line = text => {
         const paragraph = document.createElement('p');
         paragraph.textContent = text;
@@ -591,7 +608,7 @@ export function createStudentView() {
       return root;
     },
     renderAction({ status, event, actionId, target, receipt, observation, message, confirmationExpiresAt, error }) {
-      const root = document.createElement('div');
+      const root = createStudentPanel('조치 상태', ['loading', 'executing'].includes(status));
       const line = text => {
         const paragraph = document.createElement('p');
         paragraph.textContent = text;
